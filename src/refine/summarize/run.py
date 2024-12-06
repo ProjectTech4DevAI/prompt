@@ -13,29 +13,30 @@ if __name__ == '__main__':
     arguments.add_argument('--user-prompt', type=Path)
     args = arguments.parse_args()
 
-    config = json.loads(sys.stdin.read())
-    Logger.info(
-        ' '.join(str(config.get(x)) for x in ('system', 'user', 'sequence'))
-    )
-    view = config['response']
+    for line in sys.stdin:
+        config = json.loads(line)
+        Logger.info(' '.join(
+            str(config.get(x)) for x in ('system', 'user', 'sequence'))
+        )
+        view = config['response']
 
-    template = Template(args.user_prompt.read_text())
-    content = template.substitute(passage=view['message'])
+        template = Template(args.user_prompt.read_text())
+        content = template.substitute(passage=view['message'])
 
-    client = OpenAI()
-    response = client.chat.completions.create(
-        model=config['model'],
-        messages=[
-            # {
-            # 'role': 'system',
-            # 'content': 'You are an expert summarizer',
-            # },
-            {
-                'role': 'user',
-                'content': content,
-            },
-        ],
-    )
-    view['summary'] = response.choices[0].message.content
+        client = OpenAI()
+        response = client.chat.completions.create(
+            model=config['model'],
+            messages=[
+                # {
+                # 'role': 'system',
+                # 'content': 'You are an expert summarizer',
+                # },
+                {
+                    'role': 'user',
+                    'content': content,
+                },
+            ],
+        )
+        view['summary'] = response.choices[0].message.content
 
-    print(json.dumps(config, indent=3))
+        print(json.dumps(config, indent=3))
