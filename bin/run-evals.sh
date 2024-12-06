@@ -31,4 +31,5 @@ python $_src/build.py \
        --system-prompt $_src/system.txt \
        --ground-truth $_gt \
        --repetition $_repetition \
+       --response-key summary \
     | python $_src/run.py
