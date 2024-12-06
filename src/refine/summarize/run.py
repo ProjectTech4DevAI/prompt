@@ -43,6 +43,7 @@ def func(incoming, outgoing, args):
 if __name__ == '__main__':
     arguments = ArgumentParser()
     arguments.add_argument('--user-prompt', type=Path)
+    arguments.add_argument('--workers', type=int)
     args = arguments.parse_args()
 
     incoming = Queue()
