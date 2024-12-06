@@ -2,5 +2,7 @@
 
 ROOT=`git rev-parse --show-toplevel`
 
+export PYTHONPATH=$ROOT
+
 _src=$ROOT/src/refine/summarize
 python $_src/run.py --user-prompt $_src/user.txt
