@@ -3,18 +3,18 @@ import json
 from string import Template
 from pathlib import Path
 from argparse import ArgumentParser
+from multiprocessing import Pool, Queue
 
 from openai import OpenAI
 
 from mylib import Logger
 
-if __name__ == '__main__':
-    arguments = ArgumentParser()
-    arguments.add_argument('--user-prompt', type=Path)
-    args = arguments.parse_args()
+def func(incoming, outgoing, args):
+    client = OpenAI()
 
-    for line in sys.stdin:
-        config = json.loads(line)
+    while True:
+        sample = incoming.get()
+        config = json.loads(sample)
         Logger.info(' '.join(
             str(config.get(x)) for x in ('system', 'user', 'sequence'))
         )
@@ -23,7 +23,6 @@ if __name__ == '__main__':
         template = Template(args.user_prompt.read_text())
         content = template.substitute(passage=view['message'])
 
-        client = OpenAI()
         response = client.chat.completions.create(
             model=config['model'],
             messages=[
@@ -39,4 +38,27 @@ if __name__ == '__main__':
         )
         view['summary'] = response.choices[0].message.content
 
-        print(json.dumps(config, indent=3))
+        outgoing.put(config)
+
+if __name__ == '__main__':
+    arguments = ArgumentParser()
+    arguments.add_argument('--user-prompt', type=Path)
+    args = arguments.parse_args()
+
+    incoming = Queue()
+    outgoing = Queue()
+    initargs = (
+        outgoing,
+        incoming,
+        args,
+    )
+
+    with Pool(args.workers, func, initargs):
+        jobs = 0
+        for i in sys.stdin:
+            outgoing.put(i)
+            jobs += 1
+
+        for _ in range(jobs):
+            result = incoming.get()
+            print(json.dumps(result))
